@@ -3,7 +3,7 @@ import HomeHeader from "./components/common/home-header";
 
 const Home = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
       <HomeHeader />
       <Campaign />
     </div>
