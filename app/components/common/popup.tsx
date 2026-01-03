@@ -27,11 +27,11 @@ const Popup = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg w-fit max-w-[90%] min-w-[60%] min-h-[60vh] shadow-2xl animate-in zoom-in-90 duration-300 ease-out overflow-hidden"
+        className="bg-white rounded-lg w-[80%] h-[90vh] shadow-2xl animate-in zoom-in-90 duration-300 ease-out flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between px-6 py-4 bg-gray-100 border-b border-gray-300">
+          <div className="flex items-center justify-between px-6 py-4 bg-gray-100 border-b border-gray-300 shrink-0">
             {title && (
               <h2 className="text-xl font-bold text-gray-900">{title}</h2>
             )}
@@ -46,7 +46,7 @@ const Popup = ({
             )}
           </div>
         )}
-        <div>{children}</div>
+        <div className="overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

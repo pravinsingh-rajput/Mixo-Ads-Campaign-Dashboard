@@ -1,22 +1,17 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { CampaignData } from "@/app/types/campaign";
+import { CampaignData, CampaignInsights } from "@/app/types/campaign";
 import { API_BASE_URL } from "@/app/utils/constants";
-import {
-  FiCheck,
-  FiPause,
-  FiTrendingUp,
-  FiZap,
-  FiEye,
-  FiMousePointer,
-  FiDollarSign,
-  FiTarget,
-} from "react-icons/fi";
+import { FiCheck, FiPause, FiZap } from "react-icons/fi";
 import { ColumnDef } from "@tanstack/react-table";
 import CampaignCard from "./campaign-card";
 import Popup from "../common/popup";
 import DataTable from "../common/data-table";
+import CampaignDetailsTable from "./campaign-details-table";
+import CampaignMetricsGrid from "./campaign-metrics-grid";
+import StreamingToggle from "./streaming-toggle";
+import PerformanceMetricsOverview from "./performance-metrics-overview";
 
 type FilterType = "all" | "active" | "paused" | "completed";
 
@@ -38,21 +33,36 @@ interface Insights {
 const Campaign = () => {
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [insights, setInsights] = useState<Insights | null>(null);
-  const [showListPopup, setShowListPopup] = useState(false);
+  const [showTable, setShowTable] = useState(true);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [loading, setLoading] = useState(true);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [selectedCampaignDetail, setSelectedCampaignDetail] =
+    useState<CampaignData | null>(null);
+  const [campaignInsights, setCampaignInsights] =
+    useState<CampaignInsights | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
+  const [streaming, setStreaming] = useState(false);
 
   useEffect(() => {
     fetchInsights();
-  }, []);
+    fetchCampaigns();
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [eventSource]);
 
   const fetchInsights = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}campaigns/insights`);
       const data = await response.json();
       setInsights(data.insights);
-    } catch (error) {
+    } catch {
       // Handle error silently
     } finally {
       setLoading(false);
@@ -65,17 +75,96 @@ const Campaign = () => {
       const response = await fetch(`${API_BASE_URL}campaigns`);
       const data = await response.json();
       setCampaigns(data.campaigns);
-    } catch (error) {
+    } catch {
       // Handle error silently
     } finally {
       setCampaignsLoading(false);
     }
   };
 
-  const handleCardClick = (type: FilterType) => {
-    setFilterType(type);
-    setShowListPopup(true);
-    fetchCampaigns();
+  const fetchCampaignDetails = async (campaignId: string) => {
+    setDetailsLoading(true);
+    setSelectedCampaignDetail({ id: campaignId } as CampaignData);
+    setInsightsLoading(true);
+
+    try {
+      const detailsRes = await fetch(`${API_BASE_URL}campaigns/${campaignId}`);
+      const detailsData = await detailsRes.json();
+      setSelectedCampaignDetail(detailsData.campaign);
+      setDetailsLoading(false);
+
+      const insightsRes = await fetch(
+        `${API_BASE_URL}campaigns/${campaignId}/insights`
+      );
+      const insightsData = await insightsRes.json();
+      setCampaignInsights(insightsData.insights);
+      setInsightsLoading(false);
+
+      const eventSource = new EventSource(
+        `${API_BASE_URL}campaigns/${campaignId}/insights/stream`
+      );
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const insights = data.insights || data;
+        setCampaignInsights(insights);
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+      };
+
+      setEventSource(eventSource);
+    } catch {
+      setDetailsLoading(false);
+      setInsightsLoading(false);
+    }
+  };
+
+  const fetchInsightsFallback = async () => {
+    if (!selectedCampaignDetail) return;
+    setInsightsLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}campaigns/${selectedCampaignDetail.id}/insights`
+      );
+      const data = await res.json();
+      setCampaignInsights(data.insights);
+    } catch {
+      // swallow
+    } finally {
+      setInsightsLoading(false);
+    }
+  };
+
+  const toggleStreaming = () => {
+    if (streaming) {
+      if (eventSource) {
+        eventSource.close();
+        setEventSource(null);
+      }
+      setStreaming(false);
+    } else {
+      if (!selectedCampaignDetail) return;
+      setStreaming(true);
+
+      const es = new EventSource(
+        `${API_BASE_URL}campaigns/${selectedCampaignDetail.id}/insights/stream`
+      );
+
+      es.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const insights = data.insights || data;
+        setCampaignInsights(insights);
+      };
+
+      es.onerror = () => {
+        es.close();
+        setStreaming(false);
+      };
+
+      setEventSource(es);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -92,6 +181,7 @@ const Campaign = () => {
   };
 
   const getFilteredCampaigns = () => {
+    if (!campaigns || campaigns.length === 0) return [];
     if (filterType === "all") return campaigns;
     return campaigns.filter((c) => c.status === filterType);
   };
@@ -109,6 +199,27 @@ const Campaign = () => {
     }
   };
 
+  const getStatusSample = (status: FilterType) => {
+    if (!campaigns || campaigns.length === 0) return [];
+    const list =
+      status === "all"
+        ? campaigns
+        : campaigns.filter((campaign) => campaign.status === status);
+    return list.slice(0, 3).map((campaign) => ({
+      id: campaign.id,
+      name: campaign.name,
+    }));
+  };
+
+  const handleCampaignNameClick = async (
+    campaignId: string,
+    status: FilterType
+  ) => {
+    setFilterType(status);
+    setShowTable(true);
+    await fetchCampaignDetails(campaignId);
+  };
+
   const columns = useMemo<ColumnDef<CampaignData>[]>(
     () => [
       {
@@ -124,11 +235,9 @@ const Campaign = () => {
         accessorKey: "name",
         header: "Campaign Name",
         cell: (info) => (
-          <div>
-            <p className="font-semibold text-gray-900">
-              {info.getValue() as string}
-            </p>
-          </div>
+          <p className="font-semibold text-gray-900">
+            {info.getValue() as string}
+          </p>
         ),
       },
       {
@@ -176,6 +285,20 @@ const Campaign = () => {
           return <span className="text-gray-600">{platforms.join(", ")}</span>;
         },
       },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: (info) => (
+          <button
+            onClick={async () => {
+              await fetchCampaignDetails(info.row.original.id);
+            }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition"
+          >
+            View Details
+          </button>
+        ),
+      },
     ],
     []
   );
@@ -186,8 +309,8 @@ const Campaign = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
           Campaigns Overview
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          {[1, 2, 3].map((i) => (
             <div
               key={i}
               className="border border-gray-300 rounded-lg p-6 bg-gray-100 animate-pulse"
@@ -226,16 +349,7 @@ const Campaign = () => {
         Campaigns Overview
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <CampaignCard
-          title="Total Campaigns"
-          count={insights?.total_campaigns || 0}
-          icon={FiTrendingUp}
-          iconColor="text-blue-500"
-          bgColor="bg-gray-100"
-          borderColor="border-gray-300"
-          onClick={() => handleCardClick("all")}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <CampaignCard
           title="Active Campaigns"
           count={insights?.active_campaigns || 0}
@@ -243,7 +357,8 @@ const Campaign = () => {
           iconColor="text-green-500"
           bgColor="bg-green-50/60"
           borderColor="border-green-300"
-          onClick={() => handleCardClick("active")}
+          samples={getStatusSample("active")}
+          onSampleClick={(id) => handleCampaignNameClick(id, "active")}
         />
         <CampaignCard
           title="Paused Campaigns"
@@ -252,7 +367,8 @@ const Campaign = () => {
           iconColor="text-yellow-500"
           bgColor="bg-yellow-50/60"
           borderColor="border-yellow-300"
-          onClick={() => handleCardClick("paused")}
+          samples={getStatusSample("paused")}
+          onSampleClick={(id) => handleCampaignNameClick(id, "paused")}
         />
         <CampaignCard
           title="Completed Campaigns"
@@ -261,107 +377,89 @@ const Campaign = () => {
           iconColor="text-gray-500"
           bgColor="bg-gray-50"
           borderColor="border-gray-300"
-          onClick={() => handleCardClick("completed")}
+          samples={getStatusSample("completed")}
+          onSampleClick={(id) => handleCampaignNameClick(id, "completed")}
         />
       </div>
 
-      <h3 className="text-xl font-bold text-gray-900 mb-4">
-        Performance Metrics
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div className="flex items-center gap-3">
-            <FiEye className="text-3xl text-purple-500" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Impressions
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {insights?.total_impressions.toLocaleString() || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div className="flex items-center gap-3">
-            <FiMousePointer className="text-3xl text-blue-500" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Clicks</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {insights?.total_clicks.toLocaleString() || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div className="flex items-center gap-3">
-            <FiTarget className="text-3xl text-green-500" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Total Conversions
-              </p>
-              <p className="text-2xl font-bold text-gray-900">
-                {insights?.total_conversions.toLocaleString() || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div className="flex items-center gap-3">
-            <FiDollarSign className="text-3xl text-red-500" />
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Spend</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${insights?.total_spend.toLocaleString() || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Average CTR</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {insights?.avg_ctr || 0}%
-            </p>
-          </div>
-        </div>
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div>
-            <p className="text-sm font-medium text-gray-600">Average CPC</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ${insights?.avg_cpc || 0}
-            </p>
-          </div>
-        </div>
-        <div className="border border-gray-300 rounded-lg p-4 bg-white">
-          <div>
-            <p className="text-sm font-medium text-gray-600">
-              Avg Conversion Rate
-            </p>
-            <p className="text-2xl font-bold text-gray-900">
-              {insights?.avg_conversion_rate || 0}%
-            </p>
-          </div>
-        </div>
-      </div>
+      <PerformanceMetricsOverview insights={insights} />
 
-      {/* Campaign List Popup */}
+      {showTable && (
+        <div className="mt-8">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            {getPopupTitle()}
+          </h3>
+          {campaignsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-gray-200 rounded animate-pulse"
+                ></div>
+              ))}
+            </div>
+          ) : (
+            <DataTable data={getFilteredCampaigns()} columns={columns} />
+          )}
+        </div>
+      )}
+
       <Popup
-        isOpen={showListPopup}
-        onClose={() => setShowListPopup(false)}
-        title={getPopupTitle()}
+        isOpen={!!selectedCampaignDetail}
+        onClose={() => {
+          if (eventSource) {
+            eventSource.close();
+            setEventSource(null);
+          }
+          setSelectedCampaignDetail(null);
+          setCampaignInsights(null);
+          setFilterType("all");
+        }}
+        title={selectedCampaignDetail?.name || "Campaign Details"}
       >
-        {campaignsLoading ? (
-          <div className="p-6 space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
+        {detailsLoading ? (
+          <div className="p-6 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="h-16 bg-gray-200 rounded animate-pulse"
+                className="h-20 bg-gray-200 rounded animate-pulse"
               ></div>
             ))}
           </div>
         ) : (
-          <DataTable data={getFilteredCampaigns()} columns={columns} />
+          selectedCampaignDetail && (
+            <div className="p-6 space-y-6">
+              <div className="flex gap-8">
+                <CampaignDetailsTable
+                  campaign={selectedCampaignDetail}
+                  getStatusColor={getStatusColor}
+                />
+                <div className="flex-[1.5] min-w-0">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4">
+                    Performance Metrics
+                  </h4>
+                  <CampaignMetricsGrid
+                    insights={campaignInsights}
+                    isLoading={insightsLoading}
+                    onRetry={fetchInsightsFallback}
+                  />
+                  <p className="text-xs text-gray-500 mt-4">
+                    Last Updated:{" "}
+                    {campaignInsights &&
+                      new Date(
+                        campaignInsights.last_updated ??
+                          campaignInsights.timestamp ??
+                          new Date().toISOString()
+                      ).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <StreamingToggle
+                isStreaming={streaming}
+                onToggle={toggleStreaming}
+              />
+            </div>
+          )
         )}
       </Popup>
     </div>

@@ -13,9 +13,6 @@ const HomeHeader = () => {
               Monitor your campaign performance
             </p>
           </div>
-          <button className="px-4 py-2 bg-slate-100 cursor-pointer hover:bg-slate-200 text-slate-700 font-medium rounded border border-slate-300 transition">
-            Refresh
-          </button>
         </div>
       </div>
     </div>

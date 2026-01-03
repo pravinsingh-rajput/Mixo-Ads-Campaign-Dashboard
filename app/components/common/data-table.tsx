@@ -42,7 +42,7 @@ function DataTable<T>({ data, columns, onRowClick }: DataTableProps<T>) {
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="text-left px-10 py-3 text-lg font-semibold text-gray-800 bg-gray-50 tracking-wide"
+                    className="text-left px-4 py-2 text-sm font-semibold text-gray-800 bg-gray-50 tracking-wide"
                   >
                     {header.isPlaceholder
                       ? null
@@ -65,7 +65,7 @@ function DataTable<T>({ data, columns, onRowClick }: DataTableProps<T>) {
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}
-                    className="px-10 py-3 text-base text-gray-900 tracking-wide"
+                    className="px-4 py-2 text-sm text-gray-900 tracking-wide"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
