@@ -17,7 +17,7 @@ const CampaignMetricsGrid: React.FC<CampaignMetricsGridProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
           <div
             key={i}
@@ -43,62 +43,76 @@ const CampaignMetricsGrid: React.FC<CampaignMetricsGridProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <div className="flex items-center gap-3">
-          <FiEye className="text-2xl text-purple-500" />
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <FiEye className="text-xl sm:text-2xl text-purple-500" />
           <div>
-            <p className="text-xs font-medium text-gray-600">Impressions</p>
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-[10px] sm:text-xs font-medium text-gray-600">
+              Impressions
+            </p>
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
               {insights.impressions.toLocaleString()}
             </p>
           </div>
         </div>
       </div>
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <div className="flex items-center gap-3">
-          <FiMousePointer className="text-2xl text-blue-500" />
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <FiMousePointer className="text-xl sm:text-2xl text-blue-500" />
           <div>
-            <p className="text-xs font-medium text-gray-600">Clicks</p>
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-[10px] sm:text-xs font-medium text-gray-600">
+              Clicks
+            </p>
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
               {insights.clicks.toLocaleString()}
             </p>
           </div>
         </div>
       </div>
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <div className="flex items-center gap-3">
-          <FiTarget className="text-2xl text-green-500" />
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <FiTarget className="text-xl sm:text-2xl text-green-500" />
           <div>
-            <p className="text-xs font-medium text-gray-600">Conversions</p>
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-[10px] sm:text-xs font-medium text-gray-600">
+              Conversions
+            </p>
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
               {insights.conversions.toLocaleString()}
             </p>
           </div>
         </div>
       </div>
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <div className="flex items-center gap-3">
-          <FiDollarSign className="text-2xl text-red-500" />
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <FiDollarSign className="text-xl sm:text-2xl text-red-500" />
           <div>
-            <p className="text-xs font-medium text-gray-600">Spend</p>
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-[10px] sm:text-xs font-medium text-gray-600">
+              Spend
+            </p>
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
               ${insights.spend.toLocaleString()}
             </p>
           </div>
         </div>
       </div>
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <p className="text-xs font-medium text-gray-600">CTR</p>
-        <p className="text-lg font-bold text-gray-900">{insights.ctr}%</p>
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <p className="text-[10px] sm:text-xs font-medium text-gray-600">CTR</p>
+        <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
+          {insights.ctr}%
+        </p>
       </div>
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <p className="text-xs font-medium text-gray-600">CPC</p>
-        <p className="text-lg font-bold text-gray-900">${insights.cpc}</p>
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <p className="text-[10px] sm:text-xs font-medium text-gray-600">CPC</p>
+        <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
+          ${insights.cpc}
+        </p>
       </div>
-      <div className="border border-gray-300 rounded-lg p-4 bg-white">
-        <p className="text-xs font-medium text-gray-600">Conversion Rate</p>
-        <p className="text-lg font-bold text-gray-900">
+      <div className="border border-gray-300 rounded-lg p-2 sm:p-3 lg:p-4 bg-white">
+        <p className="text-[10px] sm:text-xs font-medium text-gray-600">
+          Conversion Rate
+        </p>
+        <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
           {insights.conversion_rate}%
         </p>
       </div>

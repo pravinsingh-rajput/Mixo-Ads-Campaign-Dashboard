@@ -305,11 +305,11 @@ const Campaign = () => {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <div className="p-3 sm:p-4 lg:p-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
           Campaigns Overview
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -325,10 +325,10 @@ const Campaign = () => {
             </div>
           ))}
         </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-4">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
           Performance Metrics
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -344,12 +344,12 @@ const Campaign = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+    <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
         Campaigns Overview
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <CampaignCard
           title="Active Campaigns"
           count={insights?.active_campaigns || 0}
@@ -385,8 +385,8 @@ const Campaign = () => {
       <PerformanceMetricsOverview insights={insights} />
 
       {showTable && (
-        <div className="mt-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+        <div className="mt-6 sm:mt-8">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
             {getPopupTitle()}
           </h3>
           {campaignsLoading ? (
@@ -428,14 +428,14 @@ const Campaign = () => {
           </div>
         ) : (
           selectedCampaignDetail && (
-            <div className="p-6 space-y-6">
-              <div className="flex gap-8">
+            <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
                 <CampaignDetailsTable
                   campaign={selectedCampaignDetail}
                   getStatusColor={getStatusColor}
                 />
                 <div className="flex-[1.5] min-w-0">
-                  <h4 className="text-lg font-bold text-gray-900 mb-4">
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
                     Performance Metrics
                   </h4>
                   <CampaignMetricsGrid
