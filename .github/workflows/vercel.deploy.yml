@@ -1,0 +1,26 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main # This triggers the deployment on push to the 'main' branch
+
+jobs:
+  vercel:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20" # You can set the Node version based on your project needs
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Vercel Deploy
+        run: |
+          npx vercel --prod --token ${{ secrets.WEBSITE }} --yes --force
