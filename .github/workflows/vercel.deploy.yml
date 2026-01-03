@@ -26,4 +26,4 @@ jobs:
 
       - name: Deploy to Vercel (Production)
         run: |
-          npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+          npx vercel --prod --token ${{ secrets.MIXO_VERCEL_TOKEN }} --yes
